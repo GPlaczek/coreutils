@@ -1758,9 +1758,20 @@ fn symlink_file(
     dest: &Path,
     symlinked_files: &mut HashSet<FileInformation>,
 ) -> CopyResult<()> {
-    #[cfg(not(windows))]
+    #[cfg(any(unix, target_os = "redox"))]
     {
         std::os::unix::fs::symlink(source, dest).map_err(|e| {
+            CpError::IoErrContext(
+                e,
+                translate!("cp-error-cannot-create-symlink",
+                           "dest" => get_filename(dest).unwrap_or("?").quote(),
+                           "source" => get_filename(source).unwrap_or("?").quote()),
+            )
+        })?;
+    }
+    #[cfg(target_os = "wasi")]
+    {
+        std::os::wasi::fs::symlink_path(source, dest).map_err(|e| {
             CpError::IoErrContext(
                 e,
                 translate!("cp-error-cannot-create-symlink",

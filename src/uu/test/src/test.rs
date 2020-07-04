@@ -250,7 +250,7 @@ enum PathCondition {
     Executable,
 }
 
-#[cfg(not(windows))]
+#[cfg(any(unix, target_os = "redox"))]
 fn path(path: &OsStr, condition: &PathCondition) -> bool {
     use std::fs::Metadata;
     use std::os::unix::fs::FileTypeExt;
@@ -311,7 +311,7 @@ fn path(path: &OsStr, condition: &PathCondition) -> bool {
     }
 }
 
-#[cfg(windows)]
+#[cfg(not(any(unix, target_os = "redox")))]
 fn path(path: &OsStr, condition: &PathCondition) -> bool {
     use std::fs::metadata;
 

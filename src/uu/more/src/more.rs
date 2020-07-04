@@ -379,7 +379,7 @@ fn setup_term() -> UResult<OutputType> {
     }
 }
 
-#[cfg(target_os = "fuchsia")]
+#[cfg(any(target_os = "fuchsia", target_os = "wasi"))]
 #[inline(always)]
 fn setup_term() -> UResult<OutputType> {
     // no real stdout/tty on Fuchsia, just write into a pipe
@@ -399,7 +399,7 @@ fn reset_term() -> UResult<()> {
     Ok(())
 }
 
-#[cfg(target_os = "fuchsia")]
+#[cfg(any(target_os = "fuchsia", target_os = "wasi"))]
 #[inline(always)]
 fn reset_term() -> UResult<()> {
     Ok(())

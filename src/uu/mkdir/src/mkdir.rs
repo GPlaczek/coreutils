@@ -210,7 +210,7 @@ fn chmod(path: &Path, mode: u32) -> UResult<()> {
     )
 }
 
-#[cfg(windows)]
+#[cfg(not(any(unix, target_os = "redox")))]
 fn chmod(_path: &Path, _mode: u32) -> UResult<()> {
     // chmod on Windows only sets the readonly flag, which isn't even honored on directories
     Ok(())

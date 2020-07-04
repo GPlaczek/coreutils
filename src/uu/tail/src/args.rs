@@ -132,6 +132,7 @@ pub struct Settings {
     pub follow: Option<FollowMode>,
     pub max_unchanged_stats: u32,
     pub mode: FilterMode,
+    #[cfg(any(unix, windows, target_os = "redox"))]
     pub pid: platform::Pid,
     pub retry: bool,
     pub sleep_sec: Duration,
@@ -149,6 +150,7 @@ impl Default for Settings {
             sleep_sec: Duration::from_secs_f32(1.0),
             follow: Option::default(),
             mode: FilterMode::default(),
+            #[cfg(any(unix, windows, target_os = "redox"))]
             pid: Default::default(),
             retry: Default::default(),
             use_polling: Default::default(),
@@ -246,26 +248,29 @@ impl Settings {
             }
         }
 
-        if let Some(pid_str) = matches.get_one::<String>(options::PID) {
-            match pid_str.parse() {
-                Ok(pid) => {
-                    // NOTE: on unix platform::Pid is i32, on windows platform::Pid is u32
-                    #[cfg(unix)]
-                    if pid < 0 {
-                        // NOTE: tail only accepts an unsigned pid
+        #[cfg(any(unix, windows, target_os = "redox"))]
+        {
+            if let Some(pid_str) = matches.get_one::<String>(options::PID) {
+                match pid_str.parse() {
+                    Ok(pid) => {
+                        // NOTE: on unix platform::Pid is i32, on windows platform::Pid is u32
+                        #[cfg(unix)]
+                        if pid < 0 {
+                            // NOTE: tail only accepts an unsigned pid
+                            return Err(USimpleError::new(
+                                1,
+                                translate!("tail-error-invalid-pid", "pid" => pid_str.quote()),
+                            ));
+                        }
+
+                        settings.pid = pid;
+                    }
+                    Err(e) => {
                         return Err(USimpleError::new(
                             1,
-                            translate!("tail-error-invalid-pid", "pid" => pid_str.quote()),
+                            translate!("tail-error-invalid-pid-with-error", "pid" => pid_str.quote(), "error" => e),
                         ));
                     }
-
-                    settings.pid = pid;
-                }
-                Err(e) => {
-                    return Err(USimpleError::new(
-                        1,
-                        translate!("tail-error-invalid-pid-with-error", "pid" => pid_str.quote(), "error" => e),
-                    ));
                 }
             }
         }
@@ -459,7 +464,7 @@ pub fn uu_app() -> Command {
     #[cfg(target_os = "windows")]
     let polling_help = translate!("tail-help-polling-windows");
 
-    Command::new(uucore::util_name())
+    let cmd = Command::new(uucore::util_name())
         .version(uucore::crate_version!())
         .about(translate!("tail-about"))
         .override_usage(format_usage(&translate!("tail-usage")))
@@ -490,13 +495,6 @@ pub fn uu_app() -> Command {
                 .allow_hyphen_values(true)
                 .overrides_with_all([options::BYTES, options::LINES])
                 .help(translate!("tail-help-lines")),
-        )
-        .arg(
-            Arg::new(options::PID)
-                .long(options::PID)
-                .value_name("PID")
-                .help(translate!("tail-help-pid"))
-                .overrides_with(options::PID),
         )
         .arg(
             Arg::new(options::verbosity::QUIET)
@@ -570,7 +568,18 @@ pub fn uu_app() -> Command {
                 .num_args(1..)
                 .value_parser(value_parser!(OsString))
                 .value_hint(clap::ValueHint::FilePath),
-        )
+        );
+
+    #[cfg(any(unix, windows, target_os = "redox"))]
+    let cmd = cmd.arg(
+        Arg::new(options::PID)
+            .long(options::PID)
+            .value_name("PID")
+            .help(translate!("tail-help-pid"))
+            .overrides_with(options::PID),
+    );
+
+    cmd
 }
 
 #[cfg(test)]

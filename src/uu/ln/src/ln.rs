@@ -20,6 +20,8 @@ use thiserror::Error;
 
 #[cfg(any(unix, target_os = "redox"))]
 use std::os::unix::fs::symlink;
+#[cfg(target_os = "wasi")]
+use std::os::wasi::symlink_path as symlink;
 #[cfg(windows)]
 use std::os::windows::fs::{symlink_dir, symlink_file};
 use std::path::{Path, PathBuf};
