@@ -27,6 +27,9 @@ fluent = { workspace = true }
 [dev-dependencies]
 tempfile = { workspace = true }
 
+[target.'cfg(target_os = "wasi")'.dependencies]
+wasi = "0.10"
+
 [[bin]]
 name = "df"
 path = "src/main.rs"

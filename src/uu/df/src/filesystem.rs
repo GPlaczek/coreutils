@@ -124,9 +124,6 @@ where
 impl Filesystem {
     // TODO: resolve uuid in `mount_info.dev_name` if exists
     pub(crate) fn new(mount_info: MountInfo, file: Option<OsString>) -> Option<Self> {
-        #[cfg(target_os = "wasi")]
-        return None;
-
         let _stat_path = if mount_info.mount_dir.is_empty() {
             #[cfg(unix)]
             {
@@ -144,6 +141,8 @@ impl Filesystem {
         let usage = FsUsage::new(statfs(&_stat_path).ok()?);
         #[cfg(windows)]
         let usage = FsUsage::new(Path::new(&_stat_path)).ok()?;
+        #[cfg(target_os = "wasi")]
+        let usage = FsUsage::default();
         Some(Self {
             file,
             mount_info,

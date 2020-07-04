@@ -333,6 +333,20 @@ impl MountInfo {
             dummy: false,
         })
     }
+
+    #[cfg(target_os = "wasi")]
+    fn new(dev_id: String) -> Option<MountInfo> {
+        Some(MountInfo {
+            dev_id: dev_id.clone(),
+            dev_name: "wasi".to_string(),
+            fs_type: "wasi".to_string(),
+            mount_root: "".to_string(),
+            mount_dir: dev_id,
+            mount_option: "".to_string(),
+            remote: false,
+            dummy: false,
+        })
+    }
 }
 
 #[cfg(any(
@@ -560,11 +574,29 @@ pub fn read_fs_list() -> UResult<Vec<MountInfo>> {
         target_os = "redox",
         target_os = "illumos",
         target_os = "solaris",
-        target_os = "wasi",
     ))]
     {
         // No method to read mounts, yet
         Ok(Vec::new())
+    }
+    #[cfg(target_os = "wasi")]
+    unsafe {
+        let mut mounts = Vec::new();
+        let mut fd = 3;
+        while let Ok(prestat) = wasi::fd_prestat_get(fd) {
+            if prestat.tag == wasi::PREOPENTYPE_DIR {
+                let mut path = Vec::with_capacity(prestat.u.dir.pr_name_len);
+                if let Ok(()) = wasi::fd_prestat_dir_name(fd, path.as_mut_ptr(), path.capacity()) {
+                    path.set_len(path.capacity());
+                    if let Some(mount) = MountInfo::new(String::from_utf8_lossy(&path).into_owned())
+                    {
+                        mounts.push(mount);
+                    }
+                }
+            }
+            fd += 1;
+        }
+        mounts
     }
 }
 
