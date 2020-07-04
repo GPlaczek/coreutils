@@ -559,7 +559,8 @@ pub fn read_fs_list() -> UResult<Vec<MountInfo>> {
         target_os = "aix",
         target_os = "redox",
         target_os = "illumos",
-        target_os = "solaris"
+        target_os = "solaris",
+        target_os = "wasi",
     ))]
     {
         // No method to read mounts, yet
@@ -636,7 +637,7 @@ impl FsUsage {
             };
         }
     }
-    #[cfg(windows)]
+    #[cfg(not(unix))]
     pub fn new(path: &Path) -> UResult<Self> {
         let mut root_path = [0u16; MAX_PATH];
         let success = unsafe {

@@ -124,6 +124,9 @@ where
 impl Filesystem {
     // TODO: resolve uuid in `mount_info.dev_name` if exists
     pub(crate) fn new(mount_info: MountInfo, file: Option<OsString>) -> Option<Self> {
+        #[cfg(target_os = "wasi")]
+        return None;
+
         let _stat_path = if mount_info.mount_dir.is_empty() {
             #[cfg(unix)]
             {

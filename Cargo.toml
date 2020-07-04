@@ -76,7 +76,7 @@ feat_common_core = [
   "cut",
   "date",
   "dd",
-  # "df",
+  "df",
   "dir",
   "dircolors",
   "dirname",
