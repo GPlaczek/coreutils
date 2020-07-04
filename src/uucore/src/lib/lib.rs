@@ -76,7 +76,7 @@ pub use crate::features::version_cmp;
 
 // * (platform-specific) feature-gated modules
 // ** non-windows (i.e. Unix + Fuchsia)
-#[cfg(all(not(windows), feature = "mode"))]
+#[cfg(all(not(windows), not(target_os = "wasi"), feature = "mode"))]
 pub use crate::features::mode;
 // ** unix-only
 #[cfg(all(unix, feature = "entries"))]
