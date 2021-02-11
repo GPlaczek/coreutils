@@ -7,8 +7,9 @@ use clap::ArgAction;
 use clap::{Arg, Command};
 use std::env;
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use uucore::format_usage;
+use uucore::fs::{CanonicalizeMode, canonicalize};
 
 use uucore::display::println_verbatim;
 use uucore::error::{FromIo, UResult};
@@ -32,7 +33,7 @@ fn physical_path() -> io::Result<PathBuf> {
     // On other systems we also resolve it, just in case.
     #[cfg(not(unix))]
     {
-        path.canonicalize()
+        canonicalize(path, CanonicalizeMode::Normal)?;
     }
 }
 
@@ -92,8 +93,10 @@ fn logical_path() -> io::Result<PathBuf> {
 
             #[cfg(not(unix))]
             {
-                use std::fs::canonicalize;
-                match (canonicalize(path), canonicalize(".")) {
+                match (
+                    canonicalize(path, CanonicalizeMode::Normal),
+                    canonicalize(".", CanonicalizeMode::Normal),
+                ) {
                     (Ok(path1), Ok(path2)) => path1 == path2,
                     _ => false,
                 }
