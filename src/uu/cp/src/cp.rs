@@ -3,14 +3,17 @@
 // For the full copyright and license information, please view the LICENSE
 // file that was distributed with this source code.
 // spell-checker:ignore (ToDO) copydir ficlone fiemap ftruncate linkgs lstat nlink nlinks pathbuf pwrite reflink strs xattrs symlinked deduplicated advcpmv nushell IRWXG IRWXO IRWXU IRWXUGO IRWXU IRWXG IRWXO IRWXUGO
+#![cfg_attr(target_os = "wasi", feature(wasi_ext))]
 
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::fmt::Display;
 use std::fs::{self, Metadata, OpenOptions, Permissions};
+#[cfg(target_os = "wasi")]
+use std::os::wasi::fs::MetadataExt;
 #[cfg(unix)]
-use std::os::unix::fs::{FileTypeExt, PermissionsExt};
+use std::os::unix::fs::{MetadataExt, FileTypeExt, PermissionsExt};
 use std::path::{Path, PathBuf, StripPrefixError};
 use std::{fmt, io};
 #[cfg(all(unix, not(target_os = "android")))]
@@ -1527,11 +1530,51 @@ fn file_mode_for_interactive_overwrite(
                         // Discard leading digits
                         let mode_without_leading_digits = mode & 0o7777;
 
+<<<<<<< HEAD
                         Some((
                             format!("{mode_without_leading_digits:04o}"),
                             uucore::fs::display_permissions_unix(mode, false),
                         ))
                     }
+=======
+    #[cfg(unix)]
+    let mut hard_links: Vec<(String, u64)> = vec![];
+    let mut preserve_hard_links = false;
+    for attribute in &options.preserve_attributes {
+        if *attribute == Attribute::Links {
+            preserve_hard_links = true;
+        }
+    }
+
+    // This should be changed once Redox supports hardlinks
+    #[cfg(any(windows, target_os = "redox", target_os = "wasi"))]
+    let mut hard_links: Vec<(String, u64)> = vec![];
+
+    for path in WalkDir::new(root) {
+        let p = or_continue!(path);
+        let is_symlink = fs::symlink_metadata(p.path())?.file_type().is_symlink();
+        let path = if (options.no_dereference || options.dereference) && is_symlink {
+            // we are dealing with a symlink. Don't follow it
+            match env::current_dir() {
+                Ok(cwd) => cwd.join(resolve_relative_path(p.path())),
+                Err(e) => crash!(1, "failed to get current directory {}", e),
+            }
+        } else {
+            or_continue!(canonicalize(p.path(), CanonicalizeMode::Normal))
+        };
+
+        let local_to_root_parent = match root_parent {
+            Some(parent) => {
+                #[cfg(windows)]
+                {
+                    // On Windows, some pathes are starting with \\?
+                    // but not always, so, make sure that we are consistent for strip_prefix
+                    // See https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file for more info
+                    let parent_can = adjust_canonicalization(parent);
+                    let path_can = adjust_canonicalization(&path);
+
+                    or_continue!(&path_can.strip_prefix(&parent_can)).to_path_buf()
+>>>>>>> ca5295c3b (More WASI fixes & fmt)
                 }
                 // TODO: How should failure to read the metadata be handled? Ignoring for now.
                 Err(_) => None,

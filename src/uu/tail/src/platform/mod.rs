@@ -14,8 +14,14 @@ pub use self::unix::{
 #[cfg(windows)]
 pub use self::windows::{Pid, ProcessChecker, supports_pid_checks};
 
+#[cfg(target_os = "wasi")]
+pub use self::wasi::{Pid, ProcessChecker, supports_pid_checks};
+
 #[cfg(unix)]
 mod unix;
 
 #[cfg(windows)]
 mod windows;
+
+#[cfg(target_os = "wasi")]
+mod wasi;

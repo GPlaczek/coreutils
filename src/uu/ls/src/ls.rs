@@ -5,11 +5,15 @@
 
 // spell-checker:ignore (ToDO) somegroup nlink tabsize dired subdired dtype colorterm stringly nohash strtime
 
+#![cfg_attr(target_os = "wasi", feature(wasi_ext))]
+
 #[cfg(unix)]
 use std::collections::HashMap;
 #[cfg(unix)]
 use std::os::unix::fs::{FileTypeExt, MetadataExt};
-#[cfg(windows)]
+#[cfg(target_os = "wasi")]
+use std::os::wasi::prelude::{FileTypeExt, MetadataExt};
+    #[cfg(windows)]
 use std::os::windows::fs::MetadataExt;
 use std::{
     cell::{LazyCell, OnceCell},

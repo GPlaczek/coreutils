@@ -8,6 +8,7 @@
 mod error;
 #[cfg(unix)]
 mod hardlink;
+#![cfg_attr(target_os = "wasi", feature(wasi_ext))]
 
 use clap::builder::ValueParser;
 use clap::{Arg, ArgAction, ArgMatches, Command, error::ErrorKind};
@@ -24,6 +25,9 @@ use std::io;
 use std::os::unix;
 #[cfg(unix)]
 use std::os::unix::fs::FileTypeExt;
+use std::os::unix::fs::symlink;
+#[cfg(target_os = "wasi")]
+use std::os::wasi::fs::symlink_path as symlink;
 #[cfg(windows)]
 use std::os::windows;
 use std::path::{Path, PathBuf, absolute};
@@ -882,10 +886,10 @@ fn rename_fifo_fallback(_from: &Path, _to: &Path) -> io::Result<()> {
 
 /// Move the given symlink to the given destination. On Windows, dangling
 /// symlinks return an error.
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "redox", target_os = "wasi"))]
 fn rename_symlink_fallback(from: &Path, to: &Path) -> io::Result<()> {
     let path_symlink_points_to = fs::read_link(from)?;
-    unix::fs::symlink(path_symlink_points_to, to).and_then(|_| fs::remove_file(from))
+    symlink(path_symlink_points_to, to).and_then(|_| fs::remove_file(from))
 }
 
 #[cfg(windows)]
@@ -906,7 +910,7 @@ fn rename_symlink_fallback(from: &Path, to: &Path) -> io::Result<()> {
     }
 }
 
-#[cfg(not(any(windows, unix)))]
+#[cfg(not(any(windows, unix, target_os = "redox", target_os = "wasi")))]
 fn rename_symlink_fallback(from: &Path, to: &Path) -> io::Result<()> {
     let path_symlink_points_to = fs::read_link(from)?;
     Err(io::Error::new(

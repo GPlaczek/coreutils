@@ -11,7 +11,7 @@
 const LINUX_MTAB: &str = "/etc/mtab";
 #[cfg(any(target_os = "linux", target_os = "android"))]
 const LINUX_MOUNTINFO: &str = "/proc/self/mountinfo";
-#[cfg(all(unix, not(any(target_os = "aix", target_os = "redox"))))]
+#[cfg(all(unix, not(any(target_os = "aix", target_os = "redox", target_os = "wasi"))))]
 static MOUNT_OPT_BIND: &str = "bind";
 #[cfg(windows)]
 const MAX_PATH: usize = 266;
@@ -42,6 +42,13 @@ use windows_sys::Win32::{
     },
     System::WindowsProgramming::DRIVE_REMOTE,
 };
+
+#[cfg(unix)]
+use std::os::unix::fs::{FileTypeExt, MetadataExt};
+#[cfg(target_os = "wasi")]
+use std::os::wasi::prelude::{FileTypeExt, MetadataExt};
+#[cfg(windows)]
+use std::os::windows::fs::MetadataExt;
 
 #[cfg(windows)]
 #[allow(non_snake_case)]
@@ -164,12 +171,33 @@ fn metadata_get_change_time(_md: &Metadata) -> Option<SystemTime> {
     None
 }
 
+fn ctime(metadata: &Metadata) -> i64 {
+    #[cfg(any(unix, target_os = "redox"))]
+    return metadata.ctime();
+    #[cfg(target_os = "wasi")]
+    return metadata.ctim() as _;
+}
+
+fn atime(metadata: &Metadata) -> i64 {
+    #[cfg(any(unix, target_os = "redox"))]
+    return metadata.atime();
+    #[cfg(target_os = "wasi")]
+    return metadata.atim() as _;
+}
+
+fn mtime(metadata: &Metadata) -> i64 {
+    #[cfg(any(unix, target_os = "redox"))]
+    return metadata.mtime();
+    #[cfg(target_os = "wasi")]
+    return metadata.mtim() as _;
+}
+
 pub fn metadata_get_time(md: &Metadata, md_time: MetadataTimeField) -> Option<SystemTime> {
     match md_time {
         MetadataTimeField::Change => metadata_get_change_time(md),
-        MetadataTimeField::Modification => md.modified().ok(),
-        MetadataTimeField::Access => md.accessed().ok(),
-        MetadataTimeField::Birth => md.created().ok(),
+        MetadataTimeField::Modification => mtime(md),
+        MetadataTimeField::Access => atime(md),
+        MetadataTimeField::Birth => ctime(md),
     }
 }
 

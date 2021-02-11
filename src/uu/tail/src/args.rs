@@ -132,7 +132,6 @@ pub struct Settings {
     pub follow: Option<FollowMode>,
     pub max_unchanged_stats: u32,
     pub mode: FilterMode,
-    #[cfg(any(unix, windows, target_os = "redox"))]
     pub pid: platform::Pid,
     pub retry: bool,
     pub sleep_sec: Duration,
@@ -150,7 +149,6 @@ impl Default for Settings {
             sleep_sec: Duration::from_secs_f32(1.0),
             follow: Option::default(),
             mode: FilterMode::default(),
-            #[cfg(any(unix, windows, target_os = "redox"))]
             pid: Default::default(),
             retry: Default::default(),
             use_polling: Default::default(),
@@ -248,29 +246,26 @@ impl Settings {
             }
         }
 
-        #[cfg(any(unix, windows, target_os = "redox"))]
-        {
-            if let Some(pid_str) = matches.get_one::<String>(options::PID) {
-                match pid_str.parse() {
-                    Ok(pid) => {
-                        // NOTE: on unix platform::Pid is i32, on windows platform::Pid is u32
-                        #[cfg(unix)]
-                        if pid < 0 {
-                            // NOTE: tail only accepts an unsigned pid
-                            return Err(USimpleError::new(
-                                1,
-                                translate!("tail-error-invalid-pid", "pid" => pid_str.quote()),
-                            ));
-                        }
-
-                        settings.pid = pid;
-                    }
-                    Err(e) => {
+        if let Some(pid_str) = matches.get_one::<String>(options::PID) {
+            match pid_str.parse() {
+                Ok(pid) => {
+                    // NOTE: on unix platform::Pid is i32, on windows platform::Pid is u32
+                    #[cfg(unix)]
+                    if pid < 0 {
+                        // NOTE: tail only accepts an unsigned pid
                         return Err(USimpleError::new(
                             1,
-                            translate!("tail-error-invalid-pid-with-error", "pid" => pid_str.quote(), "error" => e),
+                            translate!("tail-error-invalid-pid", "pid" => pid_str.quote()),
                         ));
                     }
+
+                    settings.pid = pid;
+                }
+                Err(e) => {
+                    return Err(USimpleError::new(
+                        1,
+                        translate!("tail-error-invalid-pid-with-error", "pid" => pid_str.quote(), "error" => e),
+                    ));
                 }
             }
         }

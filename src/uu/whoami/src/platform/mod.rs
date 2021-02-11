@@ -11,11 +11,8 @@ pub use self::unix::get_username;
 #[cfg(windows)]
 pub use self::windows::get_username;
 
-#[cfg(not(any(unix, windows)))]
-mod imp {
-    pub unsafe fn getusername() -> std::io::Result<String> {
-        Ok("unknown".into())
-    }
-}
+#[cfg(unix)]
+mod unix;
 
-pub use self::imp::getusername;
+#[cfg(windows)]
+mod windows;

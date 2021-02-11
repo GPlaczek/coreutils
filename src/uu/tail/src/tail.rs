@@ -15,7 +15,6 @@
 
 pub mod args;
 pub mod chunks;
-#[cfg(any(unix, windows, target_os = "redox"))]
 mod follow;
 mod parse;
 mod paths;
@@ -25,7 +24,6 @@ pub mod text;
 pub use args::uu_app;
 use args::{FilterMode, Settings, Signum, parse_args};
 use chunks::ReverseChunks;
-#[cfg(any(unix, windows, target_os = "redox"))]
 use follow::Observer;
 use memchr::{memchr_iter, memrchr_iter};
 use paths::{FileExtTail, HeaderPrinter, Input, InputKind};
@@ -92,7 +90,6 @@ fn uu_tail(settings: &Settings) -> UResult<()> {
         }
     }
 
-    #[cfg(any(unix, windows, target_os = "redox"))]
     if settings.follow.is_some() {
         /*
         POSIX specification regarding tail -f
@@ -140,25 +137,22 @@ fn tail_file(
             "{}",
             translate!("tail-error-reading-file", "file" => input.display_name.clone(), "error" => err_msg)
         );
-        #[cfg(any(unix, windows, target_os = "redox"))]
-        {
-            if settings.follow.is_some() {
-                let msg = if settings.retry {
-                    ""
-                } else {
-                    &translate!("tail-giving-up-on-this-name")
-                };
-                show_error!(
-                    "{}",
-                    translate!("tail-error-cannot-follow-file-type", "file" => input.display_name.clone(), "msg" => msg)
-                );
-            }
-            if !observer.follow_name_retry() {
-                // skip directory if not retry
-                return Ok(());
-            }
-            observer.add_bad_path(path, input.display_name.as_str(), false)?;
+        if settings.follow.is_some() {
+            let msg = if settings.retry {
+                ""
+            } else {
+                &translate!("tail-giving-up-on-this-name")
+            };
+            show_error!(
+                "{}",
+                translate!("tail-error-cannot-follow-file-type", "file" => input.display_name.clone(), "msg" => msg)
+            );
         }
+        if !observer.follow_name_retry() {
+            // skip directory if not retry
+            return Ok(());
+        }
+        observer.add_bad_path(path, input.display_name.as_str(), false)?;
     } else {
         match File::open(path) {
             Ok(mut file) => {
