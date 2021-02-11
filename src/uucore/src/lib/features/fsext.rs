@@ -175,21 +175,21 @@ fn ctime(metadata: &Metadata) -> i64 {
     #[cfg(any(unix, target_os = "redox"))]
     return metadata.ctime();
     #[cfg(target_os = "wasi")]
-    return metadata.ctim() as _;
+    return (metadata.ctim() / 1_000_000_000) as _;
 }
 
 fn atime(metadata: &Metadata) -> i64 {
     #[cfg(any(unix, target_os = "redox"))]
     return metadata.atime();
     #[cfg(target_os = "wasi")]
-    return metadata.atim() as _;
+    return (metadata.atim() / 1_000_000_000) as _;
 }
 
 fn mtime(metadata: &Metadata) -> i64 {
     #[cfg(any(unix, target_os = "redox"))]
     return metadata.mtime();
     #[cfg(target_os = "wasi")]
-    return metadata.mtim() as _;
+    return (metadata.mtim() / 1_000_000_000) as _;
 }
 
 pub fn metadata_get_time(md: &Metadata, md_time: MetadataTimeField) -> Option<SystemTime> {
