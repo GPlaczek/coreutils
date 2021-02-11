@@ -22,6 +22,13 @@ use quote::quote;
 pub fn main(_args: TokenStream, stream: TokenStream) -> TokenStream {
     let stream = proc_macro2::TokenStream::from(stream);
 
+    if cfg!(target_os = "wasi") {
+        if let Some(pwd) = std::env::var_os("PWD") {
+            std::env::set_current_dir(pwd).unwrap_or_else(|e| {
+                println!("Could not set current working dir: {}", e);
+            });
+        }
+    }
     let new = quote!(
         pub fn uumain(args: impl uucore::Args) -> i32 {
             #stream
