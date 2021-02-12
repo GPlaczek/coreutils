@@ -200,7 +200,7 @@ pub fn mkdir(path: &Path, config: &Config) -> UResult<()> {
     create_dir(path, false, config)
 }
 
-#[cfg(any(unix, target_os = "redox"))]
+#[cfg(unix)]
 fn chmod(path: &Path, mode: u32) -> UResult<()> {
     use std::fs::{Permissions, set_permissions};
     use std::os::unix::fs::PermissionsExt;
@@ -210,7 +210,7 @@ fn chmod(path: &Path, mode: u32) -> UResult<()> {
     )
 }
 
-#[cfg(not(any(unix, target_os = "redox")))]
+#[cfg(not(unix))]
 fn chmod(_path: &Path, _mode: u32) -> UResult<()> {
     // chmod on Windows only sets the readonly flag, which isn't even honored on directories
     Ok(())
@@ -249,6 +249,7 @@ fn create_dir(path: &Path, is_parent: bool, config: &Config) -> UResult<()> {
                 );
             }
 
+<<<<<<< HEAD
             #[cfg(all(unix, target_os = "linux"))]
             let new_mode = if path_exists {
                 config.mode
@@ -256,6 +257,12 @@ fn create_dir(path: &Path, is_parent: bool, config: &Config) -> UResult<()> {
                 // TODO: Make this macos and freebsd compatible by creating a function to get permission bits from
                 // acl in extended attributes
                 let acl_perm_bits = uucore::fsxattr::get_acl_perm_bits_from_xattr(path);
+=======
+    #[cfg(unix)]
+    fn chmod(path: &Path, mode: u16) -> i32 {
+        use std::fs::{set_permissions, Permissions};
+        use std::os::unix::fs::PermissionsExt;
+>>>>>>> 1f41e2504 (Remove redox mentions)
 
                 if is_parent {
                     (!mode::get_umask() & 0o777) | 0o300 | acl_perm_bits
@@ -290,4 +297,14 @@ fn create_dir(path: &Path, is_parent: bool, config: &Config) -> UResult<()> {
         Err(_) if path.is_dir() => Ok(()),
         Err(e) => Err(e.into()),
     }
+<<<<<<< HEAD
+=======
+    #[cfg(not(unix))]
+    #[allow(unused_variables)]
+    fn chmod(path: &Path, mode: u16) -> i32 {
+        // chmod on Windows only sets the readonly flag, which isn't even honored on directories
+        0
+    }
+    chmod(path, mode)
+>>>>>>> 1f41e2504 (Remove redox mentions)
 }

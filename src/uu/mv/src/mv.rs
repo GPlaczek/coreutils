@@ -886,7 +886,7 @@ fn rename_fifo_fallback(_from: &Path, _to: &Path) -> io::Result<()> {
 
 /// Move the given symlink to the given destination. On Windows, dangling
 /// symlinks return an error.
-#[cfg(any(unix, target_os = "redox", target_os = "wasi"))]
+#[cfg(any(unix, target_os = "wasi"))]
 fn rename_symlink_fallback(from: &Path, to: &Path) -> io::Result<()> {
     let path_symlink_points_to = fs::read_link(from)?;
     symlink(path_symlink_points_to, to).and_then(|_| fs::remove_file(from))
