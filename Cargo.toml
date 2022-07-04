@@ -669,5 +669,5 @@ used_underscore_items = "allow"              # 2
 should_panic_without_expect = "allow"        # 2
 
 [patch.crates-io]
-platform-info = { git = "https://github.com/RReverser/platform-info", branch = "unknown-platform" }
+platform-info = { git = "https://github.com/RReverser/platform-info", branch = "master" }
 termsize = { git = "https://github.com/softprops/termsize", rev = "247add722759bd834e2b542885932e42c8cfff76" }
