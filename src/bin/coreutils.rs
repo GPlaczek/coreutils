@@ -10,11 +10,14 @@ use clap_complete::Shell;
 use std::cmp;
 use std::ffi::OsStr;
 use std::ffi::OsString;
+use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process;
 use uucore::display::Quotable;
 use uucore::locale;
+
+use serde_json::json;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -97,9 +100,12 @@ fn setup_localization_or_exit(util_name: &str) {
 fn main() {
     uucore::panic::mute_sigpipe_panic();
 
-    if cfg!(target_os = "wasi") {
-        if let Some(pwd) = std::env::var_os("PWD") {
-            std::env::set_current_dir(pwd).unwrap_or_else(|e| {
+    if cfg!(target_os = "wasi") {  
+        let cmd = json!({
+            "command": "get_cwd",
+        });
+        if let Ok(cwd) = fs::read_link(format!("/!{}", cmd)){
+            std::env::set_current_dir(cwd).unwrap_or_else(|e| {
                 println!("Could not set current working dir: {}", e);
             });
         }

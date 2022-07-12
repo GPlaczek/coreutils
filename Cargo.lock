@@ -509,6 +509,7 @@ dependencies = [
  "selinux",
  "serde",
  "serde-big-array",
+ "serde_json",
  "sha1",
  "tempfile",
  "textwrap",
