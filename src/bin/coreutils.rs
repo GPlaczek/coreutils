@@ -10,14 +10,13 @@ use clap_complete::Shell;
 use std::cmp;
 use std::ffi::OsStr;
 use std::ffi::OsString;
-use std::fs;
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process;
 use uucore::display::Quotable;
 use uucore::locale;
-
 use serde_json::json;
+use std::fs;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -97,16 +96,24 @@ fn setup_localization_or_exit(util_name: &str) {
 }
 
 #[allow(clippy::cognitive_complexity)]
-fn main() {
+fn main()  -> io::Result<()>{
     uucore::panic::mute_sigpipe_panic();
 
-    if cfg!(target_os = "wasi") {  
-        let cmd = json!({
+    if cfg!(target_os = "wasi") {
+        let call = json!({
             "command": "get_cwd",
+            "buf_len": 2,
+            "buf_ptr": format!("{:?}", "{}".as_ptr()),
         });
-        if let Ok(cwd) = fs::read_link(format!("/!{}", cmd)){
+        let result = fs::read_link(format!("/!{}", call))?
+            .to_str()
+            .unwrap()
+            .trim_matches(char::from(0))
+            .to_string();
+        let (err, cwd) = result.split_once("\x1b").unwrap();
+        if err == "0" {
             std::env::set_current_dir(cwd).unwrap_or_else(|e| {
-                println!("Could not set current working dir: {}", e);
+                eprintln!("Could not set current working dir: {}", e);
             });
         }
     }
