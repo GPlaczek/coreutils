@@ -99,23 +99,15 @@ fn setup_localization_or_exit(util_name: &str) {
 fn main()  -> io::Result<()>{
     uucore::panic::mute_sigpipe_panic();
 
-    if cfg!(target_os = "wasi") {
-        let call = json!({
-            "command": "get_cwd",
-            "buf_len": 2,
-            "buf_ptr": format!("{:?}", "{}".as_ptr()),
-        });
-        let result = fs::read_link(format!("/!{}", call))?
-            .to_str()
-            .unwrap()
-            .trim_matches(char::from(0))
-            .to_string();
-        let (err, cwd) = result.split_once("\x1b").unwrap();
-        if err == "0" {
-            std::env::set_current_dir(cwd).unwrap_or_else(|e| {
-                eprintln!("Could not set current working dir: {}", e);
+    #[cfg(target_os = "wasi")] {
+        _ = wasi_ext_lib::chdir(
+            &match wasi_ext_lib::getcwd() {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("Could not obtain current working dir path: {}", e);
+                    String::from("/")
+                }
             });
-        }
     }
 
     let utils = util_map();

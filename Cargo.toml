@@ -402,11 +402,7 @@ phf.workspace = true
 selinux = { workspace = true, optional = true }
 textwrap.workspace = true
 zip = { workspace = true, optional = true }
-
 uuhelp_parser = { optional = true, version = ">=0.0.19", path = "src/uuhelp_parser" }
-
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 # * uutils
 uu_test = { optional = true, version = "0.1.0", package = "uu_test", path = "src/uu/test" }
 #
@@ -545,6 +541,9 @@ uucore = { workspace = true, features = [
 walkdir.workspace = true
 hex-literal = "1.0.0"
 rstest.workspace = true
+
+[target.'cfg(target_os = "wasi")'.dependencies]
+wasi_ext_lib = { git = "https://github.com/antmicro/wasi_ext_lib.git", branch = "unstable", features = ["hterm"] }
 
 [target.'cfg(unix)'.dev-dependencies]
 nix = { workspace = true, features = [
