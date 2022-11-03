@@ -543,7 +543,7 @@ hex-literal = "1.0.0"
 rstest.workspace = true
 
 [target.'cfg(target_os = "wasi")'.dependencies]
-wasi_ext_lib = { git = "https://github.com/antmicro/wasi_ext_lib.git", branch = "unstable", features = ["hterm"] }
+wasi_ext_lib = { git = "https://github.com/antmicro/wasi_ext_lib.git", branch = "main" }
 
 [target.'cfg(unix)'.dev-dependencies]
 nix = { workspace = true, features = [
