@@ -4,6 +4,7 @@
 // file that was distributed with this source code.
 
 // spell-checker:ignore (ToDO) nonprint nonblank nonprinting ELOOP
+#![feature(wasi_ext)]
 
 mod platform;
 
@@ -21,6 +22,8 @@ use std::os::fd::AsFd;
 use std::os::unix::fs::FileTypeExt;
 #[cfg(unix)]
 use std::os::unix::net::UnixStream;
+#[cfg(target_os = "wasi")]
+use std::os::wasi::fs::FileTypeExt;
 use thiserror::Error;
 use uucore::display::Quotable;
 use uucore::error::UResult;
@@ -110,6 +113,11 @@ enum CatError {
 
 type CatResult<T> = Result<T, CatError>;
 
+static SYNTAX: &str = "[OPTION]... [FILE]...";
+static SUMMARY: &str = "Concatenate FILE(s), or standard input, to standard output
+ With no FILE, or when FILE is -, read standard input.";
+static LONG_HELP: &str = "";
+
 #[derive(PartialEq)]
 enum NumberingMode {
     None,
@@ -195,13 +203,13 @@ enum InputType {
     File,
     StdIn,
     SymLink,
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "wasi"))]
     BlockDevice,
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "wasi"))]
     CharacterDevice,
     #[cfg(unix)]
     Fifo,
-    #[cfg(unix)]
+    #[cfg(any(unix, target_os = "wasi"))]
     Socket,
 }
 
@@ -475,11 +483,11 @@ fn get_input_type(path: &str) -> CatResult<InputType> {
     match ft {
         #[cfg(unix)]
         ft if ft.is_block_device() => Ok(InputType::BlockDevice),
-        #[cfg(unix)]
+        #[cfg(any(target_os = "wasi", unix))]
         ft if ft.is_char_device() => Ok(InputType::CharacterDevice),
         #[cfg(unix)]
         ft if ft.is_fifo() => Ok(InputType::Fifo),
-        #[cfg(unix)]
+        #[cfg(any(target_os = "wasi", unix))]
         ft if ft.is_socket() => Ok(InputType::Socket),
         ft if ft.is_dir() => Ok(InputType::Directory),
         ft if ft.is_file() => Ok(InputType::File),
